@@ -38,7 +38,15 @@ if [ -n "$PRIVATE_KEY" ]; then
 	CONFIG_SIGNED_PACKAGES="y"
 fi
 
+if [ -n "$PUBLIC_KEY" ]; then
+	echo "$PUBLIC_KEY" > public-key.pem
+	CONFIG_SIGNED_PACKAGES="y"
+fi
+
 if [ -z "$NO_DEFAULT_FEEDS" ]; then
+	sed -i 's|^\(src-git routing \)|#\1|' feeds.conf.default
+	sed -i 's|^\(src-git telephony \)|#\1|' feeds.conf.default
+	sed -i 's|^\(src-git video \)|#\1|' feeds.conf.default
 	sed \
 		-e 's,https://git.openwrt.org/feed/,https://github.com/openwrt/,' \
 		-e 's,https://git.openwrt.org/openwrt/,https://github.com/openwrt/,' \
@@ -55,6 +63,10 @@ for EXTRA_FEED in $EXTRA_FEEDS; do
 	ALL_CUSTOM_FEEDS+="$(echo "$EXTRA_FEED" | cut -d'|' -f2) "
 done
 
+group "update download.mk"
+wget -q -O include/download.mk https://raw.githubusercontent.com/openwrt/openwrt/d4d5fbd375a7d7e2fddb667afc21c221cb966130/include/download.mk
+endgroup
+
 group "feeds.conf"
 cat feeds.conf
 endgroup
@@ -62,6 +74,18 @@ endgroup
 group "feeds update -a"
 ./scripts/feeds update -a
 endgroup
+
+group "update golang"
+rm -rf feeds/packages/lang/golang/golang
+git clone https://github.com/apoiston/packages-lang-golang.git feeds/packages/lang/golang/golang
+endgroup
+
+for pkg in nginx nginx-util; do
+    group "update $pkg"
+    rm -rf "feeds/packages/net/$pkg"
+    git clone "https://github.com/apoiston/packages-net-$pkg.git" "feeds/packages/net/$pkg"
+    endgroup
+done
 
 group "make defconfig"
 make defconfig
@@ -187,6 +211,7 @@ fi
 
 if [ "$INDEX" = '1' ];then
 	group "make package/index"
+	find bin/ -type f -name "**zh-tw**" -delete
 	make package/index
 	endgroup
 fi
