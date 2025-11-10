@@ -63,11 +63,7 @@ for EXTRA_FEED in $EXTRA_FEEDS; do
 	ALL_CUSTOM_FEEDS+="$(echo "$EXTRA_FEED" | cut -d'|' -f2) "
 done
 
-group "update download.mk"
-wget -q -O include/download.mk https://raw.githubusercontent.com/openwrt/openwrt/d4d5fbd375a7d7e2fddb667afc21c221cb966130/include/download.mk
-endgroup
-
-group "feeds.conf"
+group "check feeds"
 cat feeds.conf
 endgroup
 
@@ -76,16 +72,21 @@ group "feeds update -a"
 endgroup
 
 group "update golang"
-rm -rf feeds/packages/lang/golang/golang
-git clone https://github.com/apoiston/packages-lang-golang.git feeds/packages/lang/golang/golang
+wget -q -T15 -t3 -O feeds/packages/lang/golang/golang/Makefile https://raw.githubusercontent.com/apoiston/packages-lang-golang/refs/heads/main/Makefile
 endgroup
 
-for pkg in nginx nginx-util; do
-    group "update $pkg"
-    rm -rf "feeds/packages/net/$pkg"
-    git clone "https://github.com/apoiston/packages-net-$pkg.git" "feeds/packages/net/$pkg"
-    endgroup
-done
+group "update nginx"
+wget -q -T15 -t3 -O feeds/packages/net/nginx/Makefile https://raw.githubusercontent.com/apoiston/packages-net-nginx/refs/heads/main/Makefile
+endgroup
+
+group "update nginx-util"
+wget -q -T15 -t3 -O feeds/packages/net/nginx-util/files/nginx.config https://raw.githubusercontent.com/apoiston/packages-net-nginx-util/refs/heads/main/nginx.config
+wget -q -T15 -t3 -O feeds/packages/net/nginx-util/files/uci.conf.template https://raw.githubusercontent.com/apoiston/packages-net-nginx-util/refs/heads/main/uci.conf.template
+endgroup
+
+group "update download.mk"
+wget -q -T15 -t3 -O include/download.mk https://raw.githubusercontent.com/openwrt/openwrt/d4d5fbd375a7d7e2fddb667afc21c221cb966130/include/download.mk
+endgroup
 
 group "make defconfig"
 make defconfig
