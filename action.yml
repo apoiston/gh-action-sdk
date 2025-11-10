@@ -40,20 +40,25 @@ runs:
           --env FEEDNAME \
           --env IGNORE_ERRORS \
           --env KEY_BUILD \
-          --env PRIVATE_KEY \
           --env NO_DEFAULT_FEEDS \
           --env NO_REFRESH_CHECK \
           --env NO_SHFMT_CHECK \
           --env PACKAGES \
           --env INDEX \
           --env V \
+          --env PRIVATE_KEY \
+          --env PUBLIC_KEY \
+          --env TZ=Asia/Shanghai \
+          --env FIRMWARE_VERSION="${{ secrets.FIRMWARE_VERSION }}" \
           -v ${{ steps.inputs.outputs.artifacts_dir }}:/artifacts \
           -v ${{ steps.inputs.outputs.feed_dir }}:/feed \
           sdk
       shell: bash
+
     - run: sudo chown -R --reference=${{ steps.inputs.outputs.artifacts_dir }}/.. ${{ steps.inputs.outputs.artifacts_dir }}
       shell: bash
       if: always()
+
     - run: sudo chown -R --reference=${{ steps.inputs.outputs.feed_dir }}/.. ${{ steps.inputs.outputs.feed_dir }}
       shell: bash
       if: always()
