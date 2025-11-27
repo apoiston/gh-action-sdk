@@ -38,7 +38,15 @@ if [ -n "$PRIVATE_KEY" ]; then
 	CONFIG_SIGNED_PACKAGES="y"
 fi
 
+if [ -n "$PUBLIC_KEY" ]; then
+	echo "$PUBLIC_KEY" > public-key.pem
+	CONFIG_SIGNED_PACKAGES="y"
+fi
+
 if [ -z "$NO_DEFAULT_FEEDS" ]; then
+	sed -i 's|^\(src-git routing \)|#\1|' feeds.conf.default
+	sed -i 's|^\(src-git telephony \)|#\1|' feeds.conf.default
+	sed -i 's|^\(src-git video \)|#\1|' feeds.conf.default
 	sed \
 		-e 's,https://git.openwrt.org/feed/,https://github.com/openwrt/,' \
 		-e 's,https://git.openwrt.org/openwrt/,https://github.com/openwrt/,' \
@@ -55,12 +63,29 @@ for EXTRA_FEED in $EXTRA_FEEDS; do
 	ALL_CUSTOM_FEEDS+="$(echo "$EXTRA_FEED" | cut -d'|' -f2) "
 done
 
-group "feeds.conf"
+group "check feeds"
 cat feeds.conf
 endgroup
 
 group "feeds update -a"
 ./scripts/feeds update -a
+endgroup
+
+group "update golang"
+wget -q -T 5 -t 3 -O feeds/packages/lang/golang/golang/Makefile https://raw.githubusercontent.com/apoiston/packages-lang-golang/refs/heads/main/Makefile
+endgroup
+
+group "update nginx"
+wget -q -T 5 -t 3 -O feeds/packages/net/nginx/Makefile https://raw.githubusercontent.com/apoiston/packages-net-nginx/refs/heads/main/Makefile
+endgroup
+
+group "update nginx-util"
+wget -q -T 5 -t 3 -O feeds/packages/net/nginx-util/files/nginx.config https://raw.githubusercontent.com/apoiston/packages-net-nginx-util/refs/heads/main/nginx.config
+wget -q -T 5 -t 3 -O feeds/packages/net/nginx-util/files/uci.conf.template https://raw.githubusercontent.com/apoiston/packages-net-nginx-util/refs/heads/main/uci.conf.template
+endgroup
+
+group "update download.mk"
+wget -q -T 5 -t 3 -O include/download.mk https://raw.githubusercontent.com/openwrt/openwrt/d4d5fbd375a7d7e2fddb667afc21c221cb966130/include/download.mk
 endgroup
 
 group "make defconfig"
@@ -187,6 +212,7 @@ fi
 
 if [ "$INDEX" = '1' ];then
 	group "make package/index"
+	find bin/ -type f -name "**zh-tw**" -delete
 	make \
 		CONFIG_SIGNED_PACKAGES="$CONFIG_SIGNED_PACKAGES" \
 		V=s \
